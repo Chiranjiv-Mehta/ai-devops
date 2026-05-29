@@ -1,0 +1,116 @@
+{
+  "name": "DevOps Alert AI Troubleshooter",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "devops-alert",
+        "options": {}
+      },
+      "id": "webhook-node-id",
+      "name": "Alert Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        100,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://backend:8000/api/analyze/text",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"content\": \"{{ $json.body.log || $json.body.message || $json.body.error || 'No log details provided' }}\"\n}",
+        "options": {}
+      },
+      "id": "http-request-node-id",
+      "name": "Call AI DevOps Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        320,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "slackMessage",
+              "value": "=🚨 *Production Alert Diagnosed by AI* 🚨\n\n*Log Type Detected:* `{{ $json.log_type }}`\n\n*Analysis Summary:*\n{{ $json.analysis.split('###')[1] || 'Diagnosis summary unavailable' }}\n\n*Recommended Fix:*\n{{ $json.analysis.split('###')[3] || 'Check AI panel for recommended action' }}\n\n💬 *Use the DevOps Chatbot for more info.*"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "set-message-node-id",
+      "name": "Format Slack Notification",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [
+        540,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://hooks.slack.com/services/YOUR/WEBHOOK/LINK",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"text\": \"{{ $json.slackMessage }}\"\n}",
+        "options": {}
+      },
+      "id": "slack-sender-node-id",
+      "name": "Send Slack Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Alert Webhook": {
+      "main": [
+        [
+          {
+            "node": "Call AI DevOps Backend",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call AI DevOps Backend": {
+      "main": [
+        [
+          {
+            "node": "Format Slack Notification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Slack Notification": {
+      "main": [
+        [
+          {
+            "node": "Send Slack Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "f7d73809-f8df-4a6c-9411-e73715c0e1ab",
+  "id": "devops-ai-troubleshooter"
+}

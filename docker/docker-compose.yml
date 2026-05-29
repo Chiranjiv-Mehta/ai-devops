@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+      target: backend
+    container_name: devops_assistant_backend
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../backend/.env
+    volumes:
+      - ../uploads:/app/uploads
+      - ../logs:/app/logs
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ../
+      dockerfile: docker/Dockerfile
+      target: frontend
+    container_name: devops_assistant_frontend
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: devops_assistant_n8n
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+    restart: unless-stopped
+
+volumes:
+  n8n_data:
+    driver: local
