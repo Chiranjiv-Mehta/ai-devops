@@ -10,8 +10,7 @@ def render_analyzer_ui(backend_url: str):
         unsafe_allow_html=True
     )
 
-    tab1, tab2 = st.tabs(["📝 Paste Log/Config", "📂 Upload Log/Config File"])
-
+    tab1, tab2, tab3 = st.tabs(["📝 Paste Log/Config", "📂 Upload Log/Config File", "📁 Upload Project Archive"])
     # Setup loading triggers
     analysis_result = None
     log_type_detected = None
@@ -73,7 +72,32 @@ def render_analyzer_ui(backend_url: str):
                     except Exception as e:
                         error_occurred = True
                         error_message = f"Failed to connect to backend: {str(e)}"
+    with tab3:
+        project_zip = st.file_uploader(
+            "Upload a zipped project archive",
+            type=["zip"]
+        )
+        submit_project = st.button("🚀 Analyze Project Archive", key="submit_project_archive")
 
+        if submit_project:
+            if not project_zip:
+                st.warning("Please select a ZIP archive first.")
+            else:
+                with st.spinner(f"Uploading and analyzing {project_zip.name}..."):
+                    try:
+                        files = {"file": (project_zip.name, project_zip.getvalue(), project_zip.type)}
+                        response = requests.post(f"{backend_url}/analyze/project", files=files, timeout=180)
+                        if response.status_code == 200:
+                            data = response.json()
+                            analysis_result = data.get("analysis")
+                            log_type_detected = data.get("log_type")
+                            cleaned_fragment = data.get("cleaned_log")
+                        else:
+                            error_occurred = True
+                            error_message = response.json().get("detail", "Error in backend processing")
+                    except Exception as e:
+                        error_occurred = True
+                        error_message = f"Failed to connect to backend: {str(e)}"
     # Render results if present
     if error_occurred:
         st.error(f"Analysis Failed: {error_message}")

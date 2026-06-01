@@ -1,0 +1,110 @@
+AI DevOps Assistant - Project Information
+
+Project Overview:
+- Full-stack AI DevOps assistant for log troubleshooting, IaC generation, and chatbot support.
+- Backend is a FastAPI service in `backend/`.
+- Frontend is a Streamlit UI in `frontend/`.
+- Docker support is included for backend, frontend, and n8n automation.
+- Workflow examples live in `workflows/n8n-workflows/`.
+
+Architecture and Workflow:
+1. Frontend (`frontend/app.py`) renders the Streamlit UI and uses components for:
+   - DevOps Chatbot
+   - Logs & IaC Analyzer
+   - IaC Config Generator
+2. Frontend communicates with backend via HTTP at `BACKEND_URL`, defaulting to `http://localhost:8000`.
+3. Backend loads AI provider configuration and keys from `backend/.env`.
+4. Backend exposes API endpoints and health status via FastAPI.
+5. Optional `n8n` workflow automation is defined in `workflows/n8n-workflows/alert_troubleshooter.json`.
+6. Docker Compose can start backend, frontend, and n8n together.
+
+Where API Keys Are Stored:
+- API keys are stored in the backend environment file: `backend/.env`.
+- The backend configuration loader in `backend/utils/config.py` reads:
+  - `GEMINI_API_KEY`
+  - `OPENAI_API_KEY`
+- These values are not stored in source control and should remain private.
+
+What the API Key Is:
+- `GEMINI_API_KEY`: Google Gemini API key for Gemini model access.
+- `OPENAI_API_KEY`: OpenAI API key for GPT model access.
+- Only one provider is used at a time depending on `DEFAULT_PROVIDER` in `backend/.env`.
+
+Components Used in the Project:
+- Backend:
+  - `backend/main.py` - FastAPI application entry point
+  - `backend/ai_service.py` - AI integration logic for Gemini/OpenAI
+  - `backend/routes/` - API route handlers
+  - `backend/services/` - log parsing and support services
+  - `backend/utils/config.py` - environment config and key loading
+  - `backend/requirements.txt` - Python dependency list
+- Frontend:
+  - `frontend/app.py` - Streamlit application and page routing
+  - `frontend/components/chat_ui.py` - chatbot UI
+  - `frontend/components/analyzer_ui.py` - log analysis UI
+  - `frontend/components/generator_ui.py` - IaC generation UI
+- Docker:
+  - `docker/Dockerfile` - multi-stage container build
+  - `docker/docker-compose.yml` - service orchestration for backend, frontend, n8n
+- Workflows:
+  - `workflows/n8n-workflows/alert_troubleshooter.json` - n8n alert troubleshooting workflow
+
+Important Commands:
+- Backend from project root:
+  cd backend
+  python -m venv venv
+  venv\Scripts\activate
+  pip install -r requirements.txt
+  uvicorn main:app --reload --port 8000
+
+- Frontend from project root:
+  streamlit run frontend/app.py --server.port 8501
+
+- Frontend from inside the frontend folder:
+  cd frontend
+  streamlit run app.py --server.port 8501
+
+- Docker Compose from project root:
+  cd docker
+  docker-compose up --build
+
+How to Run the Project:
+1. Open a terminal and go to the project root: `cd d:\ai-devops-assistant`
+2. Configure backend keys in `backend/.env`:
+   - `GEMINI_API_KEY` or `OPENAI_API_KEY`
+   - `DEFAULT_PROVIDER=gemini` or `openai`
+3. Run backend:
+   - `cd backend`
+   - `venv\Scripts\activate`
+   - `pip install -r requirements.txt`
+   - `uvicorn main:app --reload --port 8000`
+4. Run frontend in a second terminal:
+   - `cd d:\ai-devops-assistant`
+   - `streamlit run frontend/app.py --server.port 8501`
+5. Open the UI at `http://localhost:8501`.
+6. Optionally start Docker for a combined local setup:
+   - `cd docker`
+   - `docker-compose up --build`
+
+How Users Can Use This Project:
+- Open the Streamlit UI at `http://localhost:8501`.
+- Use the sidebar navigation to choose one of the main tools:
+  1. **DevOps Chatbot**: Ask operational questions and get AI-assisted guidance on containerization, cloud, CI/CD, and security.
+  2. **Logs & IaC Analyzer**: Paste crash reports or upload logs to get root-cause analysis and recommended fixes.
+  3. **IaC Config Generator**: Generate Dockerfiles, Kubernetes manifests, GitHub Actions workflows, or Terraform templates from prompts.
+- The frontend sends requests to the backend API at `http://localhost:8000`.
+- The backend uses the configured AI provider key to generate responses, analyze logs, and build infrastructure templates.
+- If using Docker, access the frontend UI at `http://localhost:8501`, the backend API at `http://localhost:8000`, and the n8n console at `http://localhost:5678`.
+
+Notes:
+- If the backend is not available, the frontend will show API disconnected status.
+- Make sure `backend/.env` contains at least one valid AI provider key.
+- The default backend port is `8000`; the default Streamlit frontend port is `8501`.
+
+
+User opens analyzer_ui.py
+Add a third tab:
+["📝 Paste Log/Config", "📂 Upload Log/Config File", "📁 Upload Project Archive"]
+Backend receives project archive at analyze.py
+Parse archive contents in services
+Return a single diagnosis/summary to frontend
